@@ -3,7 +3,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import configparser
+
+from argparse import ArgumentParser
 from torch.utils.data import DataLoader
 import dataset
 from tqdm import tqdm
@@ -89,22 +90,23 @@ def train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm,
 def main():
 
     # パラメータの設定
-    inifile = configparser.ConfigParser()
-    inifile.read('./params_config.ini', 'UTF-8')
-    batch_size = int(inifile.get('params', 'batch_size'))
-    hidden_size = int(inifile.get('params', 'hidden_size'))
-    learning_rate = float(inifile.get('params', 'learning_rate'))
-    epoch_max = int(inifile.get('params', 'epoch_size'))
-    max_norm = float(inifile.get('params', 'max_norm'))
-    weight_decay = float(inifile.get('params', 'weight_decay'))
-
+    parser = ArgumentParser()
+    parser.add_argument("--batch_size", type=int, default=50)
+    parser.add_argument("--data_path", type=str, default="/home/ikawa/tutorial/seq2seq/corpus/ASPEC-JE/corpus.tok/20000.dict")
+    parser.add_argument("--epoch_size", type=int, default=20)
+    parser.add_argument("--hidden_size", type=int, default=256)
+    parser.add_argument("--learning_rate", type=float, default=0.01)
+    parser.add_argument("--max_norm", type=float, default=5.0)
+    parser.add_argument("--model_name", type=str, default="attention")
+    parser.add_argument("--weight_decay", type=float, default=0.0002)
+    args = parser.parse_args()
+    
     # デバイスの設定
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('device:', device)
     
     # データのロード
-    url = '/home/ikawa/tutorial/seq2seq/data/ASPEC-JE/corpus.tok/'
-    data = torch.load(url+'20000.dict')
+    data = torch.load(args.data_path)
     PAD = data['word2index']['src']['<PAD>']
     EOS = data['word2index']['tgt']['<EOS>']
     max_len = data['settings'].max_word_seq_len
@@ -112,36 +114,35 @@ def main():
     src_dict_size = len(data['word2index']['src'])
     tgt_dict_size = len(data['word2index']['tgt'])
     train_data = dataset.PairedDataset(src_data=data['train']['src'], tgt_data=data['train']['tgt'])
-    train_loader = DataLoader(train_data, batch_size=batch_size, collate_fn=dataset.paired_collate_fn, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, collate_fn=dataset.paired_collate_fn, shuffle=True)
     valid_data = dataset.SingleDataset(src_data=data['valid']['src'])
-    valid_loader = DataLoader(valid_data, batch_size=batch_size, collate_fn=dataset.collate_fn, shuffle=False)
+    valid_loader = DataLoader(valid_data, batch_size=args.batch_size, collate_fn=dataset.collate_fn, shuffle=False)
     valid_tgt_word_data = data['valid']['tgt_word']
     valid_word_data = []
     for sentence in valid_tgt_word_data:
         valid_word_data.append([sentence[:-1]])
 
     # 設定
-    encoder = models.EncoderLSTM(PAD, hidden_size, src_dict_size).to(device)
-    decoder = models.AttentionDecoderLSTM(PAD, hidden_size, tgt_dict_size).to(device)
-    encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    encoder = models.EncoderLSTM(PAD, args.hidden_size, src_dict_size).to(device)
+    decoder = models.AttentionDecoderLSTM(PAD, args.hidden_size, tgt_dict_size).to(device)
+    encoder_optimizer = optim.Adam(encoder.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+    decoder_optimizer = optim.Adam(decoder.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     criterion = nn.NLLLoss(ignore_index=PAD, reduction='sum')
     
     # 学習
-    train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm, criterion,
-          epoch_max, train_loader, valid_loader, valid_word_data, idx2jpn, max_len, device)
+    train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, args.max_norm, criterion,
+          args.epoch_size, train_loader, valid_loader, valid_word_data, idx2jpn, max_len, device)
 
     # モデル状態の保存
     model_states = {
-        'hidden_size'  : hidden_size,
+        'hidden_size'  : args.hidden_size,
         'src_dict_size': src_dict_size,
         'tgt_dict_size': tgt_dict_size,
         'encoder_state': encoder.state_dict(),
         'decoder_state': decoder.state_dict()
     }
-    model_states_name = 'attention_1.model_states'
-    torch.save(model_states, model_states_name)
-    print('model_name:', model_states_name)
+    torch.save(model_states, "model/{}.pt".format(args.model_name))
+    print('model_name:', args.model_name)
 
 
 
