@@ -13,8 +13,10 @@ from tqdm import tqdm
 from train import load_sentences, convert_sent_to_word, convert_word_to_idx
 
 
-def test(EOS, encoder, decoder, eval_loader, dictionary, max_len, file_name, device):
-    
+def test(BOS, EOS, encoder, decoder, eval_loader, dictionary, max_len, file_name, device):
+
+    encoder.eval()
+    decoder.eval()
     pbar = tqdm(eval_loader, ascii=True)
     sentences = ''
         
@@ -44,8 +46,8 @@ def test(EOS, encoder, decoder, eval_loader, dictionary, max_len, file_name, dev
         
         # ----- decoder へ入力 -----
 
-        # 最初の入力は <EOS>
-        input_words = torch.tensor([EOS] * source.size(0), device=device)
+        # 最初の入力は [BOS]
+        input_words = torch.tensor([BOS] * source.size(0), device=device)
 
         # 最大文長を max_len + 50 として出力
         batch_words = [[] for _ in range(source.size(0))]
@@ -136,7 +138,7 @@ def main():
     decoder.load_state_dict(model_states['decoder_state'])
     
     # 文生成
-    test(EOS, encoder, decoder, eval_loader, idx2tgt, config.max_length, "output.tok", device)
+    test(BOS, EOS, encoder, decoder, eval_loader, idx2tgt, config.max_length, "output.tok", device)
 
 
 

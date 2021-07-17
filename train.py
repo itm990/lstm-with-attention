@@ -43,13 +43,15 @@ def convert_word_to_idx(word_list, word2index):
     return [ [ word2index[word] if word in word2index else word2index["[UNK]"] for word in words ] for words in word_list ]
 
 
-def train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm, criterion,
+def train(BOS, EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm, criterion,
           epoch_size, train_loader, valid_loader, valid_word_data, dictionary, max_len, device):
 
     print('start training.')
     
     for epoch in range(epoch_size):
 
+        encoder.train()
+        decoder.train()
         pbar = tqdm(train_loader, ascii=True)
         total_loss = 0
 
@@ -61,11 +63,11 @@ def train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm,
             loss = 0
 
             # データの分割
-            source, target = map(lambda x: x.to(device), batch)
-
+            enc_in, dec_in, dec_out = map(lambda x: x.to(device), batch)
+            
             # hidden, cell の初期化
-            hidden = torch.zeros(source.size(0), encoder.hidden_size, device=device)
-            cell   = torch.zeros(source.size(0), encoder.hidden_size, device=device)
+            hidden = torch.zeros(enc_in.size(0), encoder.hidden_size, device=device)
+            cell   = torch.zeros(enc_in.size(0), encoder.hidden_size, device=device)
 
                         
             # ----- encoder へ入力 -----
@@ -74,10 +76,10 @@ def train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm,
             source_hiddens = torch.tensor([], device=device)
 
             # 転置 (batch_size * words_num) --> (words_num * batch_size)
-            source_t = torch.t(source)
+            enc_in_t = torch.t(enc_in)
 
             # input_words は長さ batch_size の 1 次元 tensor
-            for source_words in source_t:
+            for source_words in enc_in_t:
                 hidden, cell = encoder(source_words, hidden, cell)
                 source_hiddens = torch.cat((source_hiddens, torch.unsqueeze(hidden, dim=1)), dim=1)
 
@@ -85,21 +87,17 @@ def train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm,
             # ----- decoder へ入力 -----
             
             # 転置 (batch_size * words_num) --> (words_num * batch_size)
-            target_t = torch.t(target)
-
-            # 最初の入力は <EOS>
-            input_words = torch.tensor([EOS] * source.size(0), device=device)
+            dec_in_t = torch.t(dec_in)
+            dec_out_t = torch.t(dec_out)
 
             # target_words は長さ batch_size の 1 次元 tensor
             # source_hiddens (batch_size * sentence_length * hidden_size)
-            for target_words in target_t:
-                output, hidden, cell = decoder(input_words, hidden, cell, source_hiddens, source)
+            for in_words, out_words in zip(dec_in_t, dec_out_t):
+                output, hidden, cell = decoder(in_words, hidden, cell, source_hiddens, enc_in)
 
                 # 損失の計算
-                loss += criterion(output, target_words)
-
-                input_words = target_words
-            
+                loss += criterion(output, out_words)
+                
             total_loss += loss
             loss.backward()
 
@@ -110,7 +108,7 @@ def train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm,
             
             pbar.set_description('[epoch:%d] loss:%f' % (epoch+1, total_loss/(i+1)))
 
-        bleu = validate.validate(EOS, encoder, decoder, valid_loader, valid_word_data, dictionary, max_len, device)
+        bleu = validate.validate(BOS, EOS, encoder, decoder, valid_loader, valid_word_data, dictionary, max_len, device)
         print('BLEU:', bleu)
 
     print('Fin.')
@@ -189,7 +187,7 @@ def main():
     tgt_train_idx_list = convert_word_to_idx(word_list=tgt_train_word_list, word2index=tgt2idx)
     src_valid_idx_list = convert_word_to_idx(word_list=src_valid_word_list, word2index=src2idx)
     
-    train_data = dataset.PairedDataset(src_data=src_train_idx_list, tgt_data=tgt_train_idx_list)
+    train_data = dataset.PairedDataset(bos_idx=BOS, eos_idx=EOS, src_data=src_train_idx_list, tgt_data=tgt_train_idx_list)
     train_loader = DataLoader(train_data, batch_size=args.batch_size, collate_fn=dataset.paired_collate_fn, shuffle=True)
     valid_data = dataset.SingleDataset(src_data=src_valid_idx_list)
     valid_loader = DataLoader(valid_data, batch_size=args.batch_size, collate_fn=dataset.collate_fn, shuffle=False)
@@ -203,7 +201,7 @@ def main():
     criterion = nn.NLLLoss(ignore_index=PAD, reduction='sum')
     
     # 学習
-    train(EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, args.max_norm, criterion,
+    train(BOS, EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, args.max_norm, criterion,
           args.epoch_size, train_loader, valid_loader, valid_word_data, idx2tgt, args.max_length, device)
 
     # モデル状態の保存

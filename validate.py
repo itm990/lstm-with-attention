@@ -5,8 +5,10 @@ from tqdm import tqdm
 
 
 
-def validate(EOS, encoder, decoder, valid_loader, valid_word_data, dictionary, max_len, device):
+def validate(BOS, EOS, encoder, decoder, valid_loader, valid_word_data, dictionary, max_len, device):
     
+    encoder.eval()
+    decoder.eval()
     pbar = tqdm(valid_loader, ascii=True)
     output_sentences = []
         
@@ -36,8 +38,8 @@ def validate(EOS, encoder, decoder, valid_loader, valid_word_data, dictionary, m
 
         # ----- decoder へ入力 -----
 
-        # 最初の入力は <EOS>
-        input_words = torch.tensor([EOS] * source.size(0), device=device)
+        # 最初の入力は [BOS]
+        input_words = torch.tensor([BOS] * source.size(0), device=device)
 
         # 最大文長を max_len + 50 として出力
         batch_words = [[] for _ in range(source.size(0))]
