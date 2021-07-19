@@ -59,7 +59,7 @@ class AttentionDecoderLSTM(nn.Module):
         # scores, alignments (batch_size * 1 * sentence_length)
         scores = torch.bmm(torch.unsqueeze(hidden, dim=1), torch.transpose(source_hiddens, dim0=1, dim1=2)) 
         attn_mask = torch.unsqueeze(source_inputs, dim=1)
-        infs = torch.full_like(scores, -float('inf'))
+        infs = torch.full_like(scores, -float("inf"))
         scores = torch.where(attn_mask==0, infs, scores)
         alignments = self.align_softmax(scores)
 

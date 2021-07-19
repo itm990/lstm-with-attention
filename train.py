@@ -46,7 +46,7 @@ def convert_word_to_idx(word_list, word2index):
 def train(BOS, EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_norm, criterion,
           epoch_size, train_loader, valid_loader, valid_word_data, dictionary, max_len, device):
 
-    print('start training.')
+    print("start training.")
     
     for epoch in range(epoch_size):
 
@@ -106,12 +106,12 @@ def train(BOS, EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, max_
             encoder_optimizer.step()
             decoder_optimizer.step()
             
-            pbar.set_description('[epoch:%d] loss:%f' % (epoch+1, total_loss/(i+1)))
+            pbar.set_description("[epoch:%d] loss:%f" % (epoch+1, total_loss/(i+1)))
 
         bleu = validate.validate(BOS, EOS, encoder, decoder, valid_loader, valid_word_data, dictionary, max_len, device)
-        print('BLEU:', bleu)
+        print("BLEU:", bleu)
 
-    print('Fin.')
+    print("Fin.")
 
 
 
@@ -144,8 +144,8 @@ def main():
     torch.manual_seed(args.seed)
     
     # デバイスの設定
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('device:', device)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("device:", device)
     
     # save config file
     if not os.path.exists("./model/{}".format(args.name)):
@@ -198,7 +198,7 @@ def main():
     decoder = models.AttentionDecoderLSTM(PAD, args.hidden_size, tgt_dict_size).to(device)
     encoder_optimizer = optim.Adam(encoder.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     decoder_optimizer = optim.Adam(decoder.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
-    criterion = nn.NLLLoss(ignore_index=PAD, reduction='sum')
+    criterion = nn.NLLLoss(ignore_index=PAD, reduction="sum")
     
     # 学習
     train(BOS, EOS, encoder, decoder, encoder_optimizer, decoder_optimizer, args.max_norm, criterion,
@@ -206,13 +206,13 @@ def main():
 
     # モデル状態の保存
     model_states = {
-        'encoder_state': encoder.state_dict(),
-        'decoder_state': decoder.state_dict()
+        "encoder_state": encoder.state_dict(),
+        "decoder_state": decoder.state_dict()
     }
     torch.save(model_states, "./model/{}/model_state.pt".format(args.name))
-    print('model_name:', args.name)
+    print("model_name:", args.name)
 
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

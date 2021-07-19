@@ -18,7 +18,7 @@ def test(BOS, EOS, encoder, decoder, eval_loader, dictionary, max_len, file_name
     encoder.eval()
     decoder.eval()
     pbar = tqdm(eval_loader, ascii=True)
-    sentences = ''
+    sentences = ""
         
     for batch in pbar:
         
@@ -71,15 +71,15 @@ def test(BOS, EOS, encoder, decoder, eval_loader, dictionary, max_len, file_name
 
         # 文章を作成
         for words in batch_words:
-            sentences += ' '.join(words) + '\n'
+            sentences += " ".join(words) + "\n"
 
-        pbar.set_description('[sentence generation]')
+        pbar.set_description("[sentence generation]")
 
     # 文章をファイルに出力
-    with open(file_name, mode='w') as output_f:
+    with open(file_name, mode="w") as output_f:
         output_f.write(sentences)
                 
-    print('Fin.')
+    print("Fin.")
 
 
 
@@ -96,8 +96,8 @@ def main():
     args = parser.parse_args()
     
     # デバイスの設定
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('device:', device)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("device:", device)
     
     model_dir = os.path.dirname(args.model_name)
     with open("{}/config.json".format(model_dir)) as f:
@@ -128,19 +128,19 @@ def main():
     eval_loader = DataLoader(eval_data, batch_size=args.batch_size, collate_fn=dataset.collate_fn, shuffle=False)
     
     # モデルのロード
-    print('model:', args.model_name)
+    print("model:", args.model_name)
     
     # モデルの読込
     model_states = torch.load(args.model_name)
     encoder = models.EncoderLSTM(PAD, config.hidden_size, src_dict_size).to(device)
     decoder = models.AttentionDecoderLSTM(PAD, config.hidden_size, tgt_dict_size).to(device)
-    encoder.load_state_dict(model_states['encoder_state'])
-    decoder.load_state_dict(model_states['decoder_state'])
+    encoder.load_state_dict(model_states["encoder_state"])
+    decoder.load_state_dict(model_states["decoder_state"])
     
     # 文生成
     test(BOS, EOS, encoder, decoder, eval_loader, idx2tgt, config.max_length, "output.tok", device)
 
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
