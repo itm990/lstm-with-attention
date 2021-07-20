@@ -1,8 +1,6 @@
-# Input-feeding Approach
-# 実装間違い
-
 import torch
 import torch.nn as nn
+
 
 # Encoder の定義
 class EncoderLSTM(nn.Module):

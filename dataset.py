@@ -1,6 +1,5 @@
 import torch
-import torch.utils.data
-import numpy
+
 
 class PairedDataset(torch.utils.data.Dataset):
 

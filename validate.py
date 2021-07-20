@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
+
 import nltk
 from tqdm import tqdm
-
 
 
 def validate(BOS, EOS, encoder, decoder, valid_loader, valid_word_data, dictionary, max_len, device):

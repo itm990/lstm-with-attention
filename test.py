@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
+from tqdm import tqdm
 import models
 import dataset
-from tqdm import tqdm
 from train import load_sentences, convert_sent_to_word, convert_word_to_idx
 
 
