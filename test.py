@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import models
 import dataset
-from train import make_dict, load_sentences, convert_sent_to_word, convert_word_to_idx
+from preprocess import make_dict, load_sentences, convert_sent_to_word, convert_word_to_idx
 
 
 def test(BOS, EOS, encoder, decoder, eval_loader, dictionary, max_len, file_name, device):
