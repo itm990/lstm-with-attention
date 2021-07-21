@@ -87,7 +87,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("--src_eval_path", type=str, default="../corpus/ASPEC-JE/corpus.tok/test.en")
+    parser.add_argument("--src_eval_path", type=str, default=None)
     
     parser.add_argument("--batch_size", type=int, default=50)
     parser.add_argument("model_name", type=str)
