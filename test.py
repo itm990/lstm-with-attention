@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import models
 import dataset
-from train import load_sentences, convert_sent_to_word, convert_word_to_idx
+from train import make_dict, load_sentences, convert_sent_to_word, convert_word_to_idx
 
 
 def test(BOS, EOS, encoder, decoder, eval_loader, dictionary, max_len, file_name, device):
@@ -105,10 +105,8 @@ def main():
     config = argparse.Namespace(**config)
     
     # データのロード
-    src_dict_data = torch.load(config.src_dict_path)
-    tgt_dict_data = torch.load(config.tgt_dict_path)
-    src2idx = src_dict_data["dict"]["word2index"]
-    idx2tgt = tgt_dict_data["dict"]["index2word"]
+    src2idx, idx2src = make_dict(config.src_vocab_path)
+    tgt2idx, idx2tgt = make_dict(config.tgt_vocab_path)
     PAD = src2idx["[PAD]"]
     BOS = src2idx["[BOS]"]
     EOS = src2idx["[EOS]"]
@@ -138,7 +136,7 @@ def main():
     decoder.load_state_dict(model_states["decoder_state"])
     
     # 文生成
-    test(BOS, EOS, encoder, decoder, eval_loader, idx2tgt, config.max_length, "output.tok", device)
+    test(BOS, EOS, encoder, decoder, eval_loader, idx2tgt, config.max_length, "{}.tok".format(args.name), device)
 
 
 

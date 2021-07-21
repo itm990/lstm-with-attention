@@ -15,6 +15,16 @@ import models
 import validate
 
 
+def make_dict(vocab_path):
+    word2index, index2word = {}, {}
+    with open(vocab_path) as f:
+        for index, word in enumerate(f):
+            word = word.strip()
+            word2index[word] = index
+            index2word[index] = word
+    return word2index, index2word
+
+
 def load_sentences(data_path):
     sent_list = []
     with open(data_path) as f:
@@ -123,8 +133,8 @@ def main():
     # パラメータの設定
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("--src_dict_path", type=str, default=None)
-    parser.add_argument("--tgt_dict_path", type=str, default=None)
+    parser.add_argument("--src_vocab_path", type=str, default=None)
+    parser.add_argument("--tgt_vocab_path", type=str, default=None)
     parser.add_argument("--src_train_path", type=str, default=None)
     parser.add_argument("--tgt_train_path", type=str, default=None)
     parser.add_argument("--src_valid_path", type=str, default=None)
@@ -154,15 +164,12 @@ def main():
     save_dir = "./model/{}_{}".format(args.name, datetime_str) if args.name != "no_name" else "./model/no_name"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-    with open("{}/config.json".format(save_dir, mode="w")) as f:
+    with open("{}/config.json".format(save_dir), mode="w") as f:
         json.dump(vars(args), f, separators=(",", ":"), indent=4)
     
     # データのロード
-    src_dict_data = torch.load(args.src_dict_path)
-    tgt_dict_data = torch.load(args.tgt_dict_path)
-    src2idx = src_dict_data["dict"]["word2index"]
-    tgt2idx = tgt_dict_data["dict"]["word2index"]
-    idx2tgt = tgt_dict_data["dict"]["index2word"]
+    src2idx, idx2src = make_dict(args.src_vocab_path)
+    tgt2idx, idx2tgt = make_dict(args.tgt_vocab_path)
     PAD = src2idx["[PAD]"]
     BOS = src2idx["[BOS]"]
     EOS = src2idx["[EOS]"]
