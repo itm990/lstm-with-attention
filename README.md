@@ -1,8 +1,9 @@
-# LSTMを使用したAttention付き機械翻訳
+# Attention付きLSTM
 
 ## 説明
 
-LSTMを使用したAttention付き機械翻訳
+LSTMを使用したAttention付き機械翻訳モデルです．
+原言語文から目的言語文への系列変換の学習，翻訳を行います．
 
 ## 要件
 
@@ -14,6 +15,7 @@ LSTMを使用したAttention付き機械翻訳
 ## 使用方法
 
 - 学習
+
 ```
 $ train.py \
     --src_vocab_path [source vocabulary] \
@@ -35,6 +37,7 @@ $ train.py \
 ```
 
 - 翻訳
+
 ```
 $ test.py \
     [model name]/model_state.pt \
